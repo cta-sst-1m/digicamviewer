@@ -16,9 +16,9 @@ from cts_core import camera
 class EventViewer():
 
     def __init__(self, event_stream, camera_config_file, baseline_window_width=10, scale='log', gain=5.8, limits_colormap=None, bin_start=0,
-                 threshold=100, pixel_start=500, view_type='pixel', camera_view='std', limits_readout=[0, 4095]):
+                 threshold=100, pixel_start=500, view_type='pixel', camera_view='std', limits_readout=None):
 
-        plt.ioff()
+        # plt.ioff()
         mpl.figure.autolayout = False
         self.baseline_window_width = baseline_window_width
         self.scale = scale
@@ -38,10 +38,14 @@ class EventViewer():
         self.data = np.array(list(self.r0_container.tel[self.telescope_id].adc_samples.values()))
         self.image = np.zeros(self.data.shape[0])
 
-        if self.expert_mode:
+        try:
 
             self.trigger_output = np.array(list(self.r0_container.tel[self.telescope_id].trigger_output_patch7.values()))
             self.trigger_input = np.array(list(self.r0_container.tel[self.telescope_id].trigger_input_traces.values()))
+            self.expert_mode = True
+        except:
+
+            self.expert_mode = False
 
         self.n_bins = self.data.shape[-1]
         self.threshold = threshold
@@ -50,6 +54,8 @@ class EventViewer():
 
         self.camera = camera.Camera(_config_file=camera_config_file)
         self.geometry = geometry.generate_geometry(camera=self.camera)[0]
+        print(self.geometry)
+        print('hello')
 
         self.view_type = view_type
         self.view_types = ['pixel', 'patch', 'cluster_7', 'trigger_out', 'trigger_in']#, 'cluster_9']
@@ -222,34 +228,28 @@ class EventViewer():
 
         if self.view_type in self.view_types:
 
-            if not self.view_type=='pixel':
+            if not self.view_type=='pixel'and hasattr(self, 'expert_mode'):
 
-                baseline = np.mean(image[..., 0:self.baseline_window_width], axis=1)
-                image = image - baseline[:, np.newaxis]
+                if self.view_type == 'patch':
 
-                cluster_trace, patch_trace = trigger.compute_cluster_trace(image, self.options)
+                    pass
+                    # image[pixel_id] = patch_trace[self.camera.Pixels[pixel_id].patch]
 
-                for pixel_id in range(self.data.shape[0]):
+                elif self.view_type == 'cluster_7':
 
-                    if self.view_type == 'patch':
+                    pass
+                    # image[pixel_id] = cluster_trace[self.camera.Pixels[pixel_id].patch]
 
-                        image[pixel_id] = patch_trace[self.camera.Pixels[pixel_id].patch]
+                elif self.view_type == 'cluster_9':
 
-                    elif self.view_type == 'cluster_7':
+                    print('Cluster 19 not implemented')
 
-                        image[pixel_id] = cluster_trace[self.camera.Pixels[pixel_id].patch]
+                    pass
 
-                    elif self.view_type == 'cluster_9':
+                elif self.view_type == 'trigger_out':
 
-                        print('Cluster 19 not implemented')
-
-                        image = np.zeros(self.data.shape)
-
-                    elif self.view_type == 'trigger_out':
-
-                        image[pixel_id] = self.trigger_output[self.camera.Pixels[pixel_id].patch]
-
-                print(image.shape)
+                    pass
+                    # image = self.trigger_output
 
         return image
 
@@ -285,7 +285,7 @@ class EventViewer():
 
             elif self.camera_view == 'stacked':
 
-                self.image += np.mean(image, axis=1)
+                self.image += np.mean(image, axis=1).astype(int)
 
             elif self.camera_view == 'p.e.':
 
