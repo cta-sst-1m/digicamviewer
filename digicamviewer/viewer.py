@@ -143,7 +143,6 @@ class EventViewer():
         #print(index)
         #print(patch_trace[index[0]])
 
-
     def next_camera_view(self, camera_view, event=None):
 
         self.camera_view = camera_view
@@ -153,7 +152,6 @@ class EventViewer():
         else:
             self.camera_visu.colorbar.set_label('[LSB]')
         self.update()
-
 
     def next_view_type(self, view_type, event=None):
 
@@ -174,14 +172,12 @@ class EventViewer():
             self.pixel_id = pixel_id
             self.update()
 
-
     def update(self):
 
         self.draw_readout(self.pixel_id)
         self.draw_camera()
         self.button_next_event.label.set_text('show event #%d' %(self.event_id + 1))
         #self.slider_time.set_val(self.time)
-
 
     def draw(self):
 
@@ -215,8 +211,6 @@ class EventViewer():
         #self.axis_readout.plot(np.array([self.time, self.time])*4, np.array([np.min(y), np.max(y)]), color='r', linestyle='--')
         #self.axis_readout.step(x, y,
          #                 label='%s %d' % (self.view_type, self.pixel_id), where='mid')
-
-
 
     def draw_camera(self):
 
@@ -255,8 +249,6 @@ class EventViewer():
 
                         image[pixel_id] = self.trigger_output[self.camera.Pixels[pixel_id].patch]
 
-
-
                 print(image.shape)
 
         return image
@@ -264,7 +256,6 @@ class EventViewer():
     def compute_image(self):
 
         image = self.compute_trace()
-
 
         if self.camera_view in self.camera_views:
 
