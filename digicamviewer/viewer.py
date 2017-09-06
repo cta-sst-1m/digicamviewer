@@ -230,6 +230,9 @@ class EventViewer():
 
             elif self.view_type == 'trigger_out':
 
+                to_print = ['%d, %d' % (pixel.ID, pixel.patch) for pixel in self.camera.Pixels]
+                print(to_print)
+
                 image = np.array([self.trigger_output[pixel.patch] for pixel in self.camera.Pixels])
 
             elif self.view_type == 'trigger_in':
