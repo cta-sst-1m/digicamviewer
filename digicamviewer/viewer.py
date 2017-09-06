@@ -41,7 +41,7 @@ class EventViewer():
         try:
 
             self.trigger_output = np.array(list(self.r0_container.tel[self.telescope_id].trigger_output_patch7.values()))
-            self.trigger_input = np.array(list(self.r0_container.tel[self.telescope_id].trigger_input_traces.values()))
+            # self.trigger_input = np.array(list(self.r0_container.tel[self.telescope_id].trigger_input_traces.values()))
             self.expert_mode = True
         except:
 
@@ -54,14 +54,12 @@ class EventViewer():
 
         self.camera = camera.Camera(_config_file=camera_config_file)
         self.geometry = geometry.generate_geometry(camera=self.camera)[0]
-        print(self.geometry)
-        print('hello')
 
         self.view_type = view_type
-        self.view_types = ['pixel', 'patch', 'cluster_7', 'trigger_out', 'trigger_in']#, 'cluster_9']
+        self.view_types = ['pixel', 'trigger_out', 'trigger_in']
         self.iterator_view_type = cycle(self.view_types)
         self.camera_view = camera_view
-        self.camera_views = ['sum', 'mean', 'max', 'std', 'time', 'baseline_substracted', 'stacked', 'p.e.']
+        self.camera_views = ['sum', 'mean', 'max', 'std', 'time', 'stacked', 'p.e.']
         self.iterator_camera_view = cycle(self.camera_views)
         self.figure = plt.figure(figsize=(20, 10))
 
@@ -135,7 +133,7 @@ class EventViewer():
                 #self.event_id +=
             if self.expert_mode:
                 self.trigger_output = np.array(list(self.r0_container.tel[self.telescope_id].trigger_output_patch7.values()))
-                self.trigger_input = np.array(list(self.r0_container.tel[self.telescope_id].trigger_output_patch7.values()))
+                # self.trigger_input = np.array(list(self.r0_container.tel[self.telescope_id].trigger_input_patch7.values()))
 
         self.local_time = self.r0_container.tel[self.telescope_id].local_camera_clock
         self.update()
@@ -224,38 +222,27 @@ class EventViewer():
 
     def compute_trace(self):
 
-        image = self.data
-
         if self.view_type in self.view_types:
 
-            if not self.view_type=='pixel'and hasattr(self, 'expert_mode'):
+            if self.view_type == 'pixel':
 
-                if self.view_type == 'patch':
+                image = self.data
 
-                    pass
-                    # image[pixel_id] = patch_trace[self.camera.Pixels[pixel_id].patch]
+            elif self.view_type == 'trigger_out':
 
-                elif self.view_type == 'cluster_7':
+                image = np.array([self.trigger_output[pixel.patch] for pixel in self.camera.Pixels])
 
-                    pass
-                    # image[pixel_id] = cluster_trace[self.camera.Pixels[pixel_id].patch]
+            elif self.view_type == 'trigger_in':
 
-                elif self.view_type == 'cluster_9':
-
-                    print('Cluster 19 not implemented')
-
-                    pass
-
-                elif self.view_type == 'trigger_out':
-
-                    pass
-                    # image = self.trigger_output
+                image = np.zeros(self.data.shape)
+                print('%s not implemented' % self.view_type )
 
         return image
 
     def compute_image(self):
 
         image = self.compute_trace()
+        image = image - np.mean(image[..., -10:], axis=1)[:, np.newaxis]
 
         if self.camera_view in self.camera_views:
 
@@ -279,19 +266,13 @@ class EventViewer():
 
                 self.image = image[:, self.time]
 
-            elif self.camera_view == 'baseline_substracted':
-
-                self.image = image[:, self.time] - np.mean(image, axis=1)
-
             elif self.camera_view == 'stacked':
 
                 self.image += np.mean(image, axis=1).astype(int)
 
             elif self.camera_view == 'p.e.':
 
-                baseline = scipy.stats.mode(image, axis=1)[0]
-                baseline = baseline.reshape(baseline.shape[0], )
-                self.image = np.max(image - baseline[:, np.newaxis], axis=1)/self.gain
+                self.image = np.max(image, axis=1)/self.gain
 
         else:
 

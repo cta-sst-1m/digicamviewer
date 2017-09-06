@@ -20,8 +20,6 @@ def generate_geometry(camera):
         pix_y.append(pix.center[1])
         pix_id.append(pix.ID)
 
-        print(pix.ID)
-
     neighbors_pix = find_neighbor_pixels(pix_x, pix_y, 30.)
     geom = CameraGeometry(0, pix_id, pix_x * u.mm, pix_y * u.mm, np.ones(1296) * 400., neighbors_pix, 'hexagonal')
 
