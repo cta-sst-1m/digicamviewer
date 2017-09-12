@@ -16,7 +16,7 @@ from cts_core import camera
 class EventViewer():
 
     def __init__(self, event_stream, camera_config_file, baseline_window_width=10, scale='log', gain=5.8, limits_colormap=None, bin_start=0,
-                 threshold=100, pixel_start=500, view_type='pixel', camera_view='std', limits_readout=None):
+                 threshold=0, pixel_start=0, view_type='pixel', camera_view='std', limits_readout=None):
 
         # plt.ioff()
         mpl.figure.autolayout = False
@@ -115,7 +115,7 @@ class EventViewer():
         #self.axis_slider_time = self.figure.add_axes([readout_position.x0 - 0.018, readout_position.y1 + 0.005, readout_position.x1 - readout_position.x0 + 0.005, 0.02], facecolor='lightgoldenrodyellow', zorder=np.inf)
         self.axis_next_camera_view_button.axis('off')
         self.axis_next_view_type_button.axis('off')
-        self.button_next_event = Button(self.axis_next_event_button, 'show event # %d' %(self.event_id + 1))
+        self.button_next_event = Button(self.axis_next_event_button, 'Next: curren event # %d' %(self.event_id))
         self.radio_button_next_camera_view = RadioButtons(self.axis_next_camera_view_button, self.camera_views, active=self.camera_views.index(self.camera_view))
         self.radio_button_next_view_type = RadioButtons(self.axis_next_view_type_button, self.view_types, active=self.view_types.index(self.view_type))
         self.radio_button_next_view_type.set_active(self.view_types.index(self.view_type))
@@ -124,21 +124,19 @@ class EventViewer():
 
     def next(self, event=None, step=1):
 
-        if not self.first_call:
+        for i in range(step):
+            self.r0_container = self.event_iterator.__next__().r0
 
-            for i in range(step):
-                self.r0_container = self.event_iterator.__next__().r0
+        self.data = np.array(list(self.r0_container.tel[self.telescope_id].adc_samples.values()))
 
-            self.data = np.array(list(self.r0_container.tel[self.telescope_id].adc_samples.values()))
-                #self.event_id +=
-            if self.expert_mode:
-                self.trigger_output = np.array(list(self.r0_container.tel[self.telescope_id].trigger_output_patch7.values()))
-                # self.trigger_input = np.array(list(self.r0_container.tel[self.telescope_id].trigger_input_patch7.values()))
+        if self.expert_mode:
+            self.trigger_output = np.array(list(self.r0_container.tel[self.telescope_id].trigger_output_patch7.values()))
+            # self.trigger_input = np.array(list(self.r0_container.tel[self.telescope_id].trigger_input_patch7.values()))
 
         self.local_time = self.r0_container.tel[self.telescope_id].local_camera_clock
         self.update()
         self.first_call = False
-        self.event_id += step
+        self.event_id = self.r0_container.event_id
         #np.set_printoptions(threshold=np.nan)
         #patch_trace = np.array(list(self.r0_container.tel[1].trigger_input_traces.values()))
         #print(patch_trace)
@@ -180,7 +178,7 @@ class EventViewer():
 
         self.draw_readout(self.pixel_id)
         self.draw_camera()
-        self.button_next_event.label.set_text('show event #%d' %(self.event_id + 1))
+        self.button_next_event.label.set_text('Next : current event #%d' % (self.event_id))
         #self.slider_time.set_val(self.time)
 
     def draw(self):
@@ -230,8 +228,8 @@ class EventViewer():
 
             elif self.view_type == 'trigger_out':
 
-                to_print = ['%d, %d' % (pixel.ID, pixel.patch) for pixel in self.camera.Pixels]
-                print(to_print)
+                # to_print = ['%d, %d' % (pixel.ID, pixel.patch) for pixel in self.camera.Pixels]
+                # print(to_print)
 
                 image = np.array([self.trigger_output[pixel.patch] for pixel in self.camera.Pixels])
 
@@ -245,7 +243,7 @@ class EventViewer():
     def compute_image(self):
 
         image = self.compute_trace()
-        image = image - np.mean(image[..., -10:], axis=1)[:, np.newaxis]
+        # image = image - np.mean(image[..., -10:], axis=1)[:, np.newaxis]
 
         if self.camera_view in self.camera_views:
 
