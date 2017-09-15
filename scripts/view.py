@@ -3,7 +3,7 @@ from digicampipe import event_stream
 
 if __name__ == '__main__':
 
-    directory = '/home/alispach/blackmonkey/first_light/20170831/'
+    directory = '/home/alispach/blackmonkey/calib_data/first_light/20170831/'
 
     camera_config_file = '/home/alispach/Documents/PhD/ctasoft/CTS/config/camera_config.cfg'
     file_basename = directory + 'CameraDigicam@sst1mserver_0_000.%d.fits.fz'

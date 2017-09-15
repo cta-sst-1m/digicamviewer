@@ -14,8 +14,8 @@ from cts_core import camera
 
 
 class EventViewer():
-
-    def __init__(self, event_stream, camera_config_file, baseline_window_width=10, scale='log', gain=5.8, limits_colormap=None, bin_start=0,
+    def __init__(self, event_stream, camera_config_file, baseline_window_width=10, scale='log', gain=5.8,
+                 limits_colormap=None, bin_start=0,
                  threshold=0, pixel_start=0, view_type='pixel', camera_view='std', limits_readout=None):
 
         # plt.ioff()
@@ -40,7 +40,8 @@ class EventViewer():
 
         try:
 
-            self.trigger_output = np.array(list(self.r0_container.tel[self.telescope_id].trigger_output_patch7.values()))
+            self.trigger_output = np.array(
+                list(self.r0_container.tel[self.telescope_id].trigger_output_patch7.values()))
             # self.trigger_input = np.array(list(self.r0_container.tel[self.telescope_id].trigger_input_traces.values()))
             self.expert_mode = True
         except:
@@ -59,7 +60,7 @@ class EventViewer():
         self.view_types = ['pixel', 'trigger_out', 'trigger_in']
         self.iterator_view_type = cycle(self.view_types)
         self.camera_view = camera_view
-        self.camera_views = ['sum', 'mean', 'max', 'std', 'time', 'stacked', 'p.e.']
+        self.camera_views = ['sum', 'mean', 'max', 'std', 'time', 'stacked', 'r1', 'dl0', 'dl1', 'dl2']
         self.iterator_camera_view = cycle(self.camera_views)
         self.figure = plt.figure(figsize=(20, 10))
 
@@ -72,14 +73,14 @@ class EventViewer():
         self.axis_readout.legend(loc='upper right')
         self.axis_readout.yaxis.set_major_formatter(FormatStrFormatter('%d'))
         self.axis_readout.yaxis.set_major_locator(MaxNLocator(integer=True, nbins=10))
-        self.trace_time_plot, = self.axis_readout.plot(np.array([self.time, self.time]) * 4, np.array([np.min(self.data[self.pixel_id]), np.max(self.data[self.pixel_id])]), color='r',
-                               linestyle='--')
+        self.trace_time_plot, = self.axis_readout.plot(np.array([self.time, self.time]) * 4, np.array(
+            [np.min(self.data[self.pixel_id]), np.max(self.data[self.pixel_id])]), color='r',
+                                                       linestyle='--')
         self.trace_readout, = self.axis_readout.step(self.readout_x, self.data[self.pixel_id],
-                               label='%s %d' % (self.view_type, self.pixel_id), where='mid')
+                                                     label='%s %d' % (self.view_type, self.pixel_id), where='mid')
 
         if self.threshold is not None:
-
-            self.axis_readout.axhline(y=self.threshold, linestyle='--', color='k')#, label='threshold')
+            self.axis_readout.axhline(y=self.threshold, linestyle='--', color='k')  # , label='threshold')
 
         self.axis_readout.legend(loc='upper right')
         self.limits_readout = limits_readout
@@ -92,14 +93,13 @@ class EventViewer():
                                                        cmap='viridis',
                                                        allow_pick=True)
         if limits_colormap is not None:
-
             self.camera_visu.set_limits_minmax(limits_colormap[0], limits_colormap[1])
 
         self.camera_visu.image = self.compute_image()
         self.camera_visu.cmap.set_bad(color='k')
         self.camera_visu.add_colorbar(orientation='horizontal', pad=0.03, fraction=0.05, shrink=.85)
 
-        if self.scale=='log':
+        if self.scale == 'log':
             self.camera_visu.colorbar.set_norm(LogNorm(vmin=1, vmax=None, clip=False))
         self.camera_visu.colorbar.set_label('[ADC]')
         self.camera_visu.axes.get_xaxis().set_visible(False)
@@ -112,38 +112,46 @@ class EventViewer():
         self.axis_next_event_button = self.figure.add_axes([0.35, 0.9, 0.15, 0.07], zorder=np.inf)
         self.axis_next_camera_view_button = self.figure.add_axes([0., 0.85, 0.1, 0.15], zorder=np.inf)
         self.axis_next_view_type_button = self.figure.add_axes([0., 0.18, 0.1, 0.15], zorder=np.inf)
-        #self.axis_slider_time = self.figure.add_axes([readout_position.x0 - 0.018, readout_position.y1 + 0.005, readout_position.x1 - readout_position.x0 + 0.005, 0.02], facecolor='lightgoldenrodyellow', zorder=np.inf)
+        # self.axis_slider_time = self.figure.add_axes([readout_position.x0 - 0.018, readout_position.y1 + 0.005, readout_position.x1 - readout_position.x0 + 0.005, 0.02], facecolor='lightgoldenrodyellow', zorder=np.inf)
         self.axis_next_camera_view_button.axis('off')
         self.axis_next_view_type_button.axis('off')
-        self.button_next_event = Button(self.axis_next_event_button, 'Next: curren event # %d' %(self.event_id))
-        self.radio_button_next_camera_view = RadioButtons(self.axis_next_camera_view_button, self.camera_views, active=self.camera_views.index(self.camera_view))
-        self.radio_button_next_view_type = RadioButtons(self.axis_next_view_type_button, self.view_types, active=self.view_types.index(self.view_type))
+        self.button_next_event = Button(self.axis_next_event_button, 'Next: curren event # %d' % (self.event_id))
+        self.radio_button_next_camera_view = RadioButtons(self.axis_next_camera_view_button, self.camera_views,
+                                                          active=self.camera_views.index(self.camera_view))
+        self.radio_button_next_view_type = RadioButtons(self.axis_next_view_type_button, self.view_types,
+                                                        active=self.view_types.index(self.view_type))
         self.radio_button_next_view_type.set_active(self.view_types.index(self.view_type))
         self.radio_button_next_camera_view.set_active(self.camera_views.index(self.camera_view))
-        #self.slider_time = Slider(self.axis_slider_time, '', 0, options.n_bins - 1, valinit=self.time, valfmt='%d')
+        # self.slider_time = Slider(self.axis_slider_time, '', 0, options.n_bins - 1, valinit=self.time, valfmt='%d')
 
     def next(self, event=None, step=1):
 
-        for i in range(step):
-            self.r0_container = self.event_iterator.__next__().r0
+        for i, event in zip(range(step), self.event_iterator):
+
+            self.r0_container = event.r0
+            self.r1_container = event.r1
+            self.dl0_container = event.dl0
+            self.dl1_container = event.dl1
+            self.dl2_container = event.dl2
 
         self.data = np.array(list(self.r0_container.tel[self.telescope_id].adc_samples.values()))
 
         if self.expert_mode:
-            self.trigger_output = np.array(list(self.r0_container.tel[self.telescope_id].trigger_output_patch7.values()))
+            self.trigger_output = np.array(
+                list(self.r0_container.tel[self.telescope_id].trigger_output_patch7.values()))
             # self.trigger_input = np.array(list(self.r0_container.tel[self.telescope_id].trigger_input_patch7.values()))
 
         self.local_time = self.r0_container.tel[self.telescope_id].local_camera_clock
         self.update()
         self.first_call = False
         self.event_id = self.r0_container.event_id
-        #np.set_printoptions(threshold=np.nan)
-        #patch_trace = np.array(list(self.r0_container.tel[1].trigger_input_traces.values()))
-        #print(patch_trace)
-        #print(np.max(patch_trace))
-        #index = np.unravel_index(np.argmax(patch_trace), patch_trace.shape)
-        #print(index)
-        #print(patch_trace[index[0]])
+        # np.set_printoptions(threshold=np.nan)
+        # patch_trace = np.array(list(self.r0_container.tel[1].trigger_input_traces.values()))
+        # print(patch_trace)
+        # print(np.max(patch_trace))
+        # index = np.unravel_index(np.argmax(patch_trace), patch_trace.shape)
+        # print(index)
+        # print(patch_trace[index[0]])
 
     def next_camera_view(self, camera_view, event=None):
 
@@ -162,15 +170,13 @@ class EventViewer():
 
     def set_time(self, time):
 
-        if time< self.n_bins and time>=0:
-
+        if time < self.n_bins and time >= 0:
             self.time = time
             self.update()
 
     def set_pixel(self, pixel_id):
 
         if pixel_id < 1296 and pixel_id >= 0:
-
             self.pixel_id = pixel_id
             self.update()
 
@@ -179,7 +185,7 @@ class EventViewer():
         self.draw_readout(self.pixel_id)
         self.draw_camera()
         self.button_next_event.label.set_text('Next : current event #%d' % (self.event_id))
-        #self.slider_time.set_val(self.time)
+        # self.slider_time.set_val(self.time)
 
     def draw(self):
 
@@ -187,7 +193,7 @@ class EventViewer():
         self.button_next_event.on_clicked(self.next)
         self.radio_button_next_camera_view.on_clicked(self.next_camera_view)
         self.radio_button_next_view_type.on_clicked(self.next_view_type)
-        #self.slider_time.on_changed(self.set_time)
+        # self.slider_time.on_changed(self.set_time)
         self.figure.canvas.mpl_connect('key_press_event', self.press)
         self.camera_visu._on_pick(self.event_clicked_on)
         plt.show()
@@ -196,23 +202,23 @@ class EventViewer():
 
         y = self.compute_trace()[pix]
         limits_y = self.limits_readout if self.limits_readout is not None else [np.min(y), np.max(y) + 10]
-        #limits_y = [np.min(y), np.max(y) + 1]
+        # limits_y = [np.min(y), np.max(y) + 1]
         self.pixel_id = pix
         self.event_clicked_on.ind[-1] = self.pixel_id
         self.trace_readout.set_ydata(y)
         self.trace_readout.set_label('%s : %d, bin : %d' % (self.view_type, self.pixel_id, self.time))
         self.trace_time_plot.set_ydata(limits_y)
-        self.trace_time_plot.set_xdata(self.time*4)
-        #y_ticks = np.linspace(np.min(y), np.max(y) + (np.max(y)-np.min(y)//10), np.max(y)-np.min(y)//10)
-        #self.axis_readout.set_yticks(np.linspace(np.min(y), np.max(y), 8).astype(int))
+        self.trace_time_plot.set_xdata(self.time * 4)
+        # y_ticks = np.linspace(np.min(y), np.max(y) + (np.max(y)-np.min(y)//10), np.max(y)-np.min(y)//10)
+        # self.axis_readout.set_yticks(np.linspace(np.min(y), np.max(y), 8).astype(int))
         self.axis_readout.set_ylim(limits_y)
         self.axis_readout.legend(loc='upper right')
 
 
-        #self.axis_readout.cla()
-        #self.axis_readout.plot(np.array([self.time, self.time])*4, np.array([np.min(y), np.max(y)]), color='r', linestyle='--')
-        #self.axis_readout.step(x, y,
-         #                 label='%s %d' % (self.view_type, self.pixel_id), where='mid')
+        # self.axis_readout.cla()
+        # self.axis_readout.plot(np.array([self.time, self.time])*4, np.array([np.min(y), np.max(y)]), color='r', linestyle='--')
+        # self.axis_readout.step(x, y,
+        #                 label='%s %d' % (self.view_type, self.pixel_id), where='mid')
 
     def draw_camera(self):
 
@@ -236,7 +242,7 @@ class EventViewer():
             elif self.view_type == 'trigger_in':
 
                 image = np.zeros(self.data.shape)
-                print('%s not implemented' % self.view_type )
+                print('%s not implemented' % self.view_type)
 
         return image
 
@@ -271,38 +277,43 @@ class EventViewer():
 
                 self.image += np.mean(image, axis=1).astype(int)
 
-            elif self.camera_view == 'p.e.':
+            elif self.camera_view == 'r1':
 
-                self.image = np.max(image, axis=1)/self.gain
+                self.image = self.r1_container.tel[self.telescope_id].pe_samples
+
+            elif self.camera_view == 'dl1' or self.camera_view == 'dl2':
+
+                self.image = np.ma.masked_where(self.dl1_container.tel[self.telescope_id].extracted_samples, self.dl1_container.tel[self.telescope_id].image)
+
+                if self.camera_view == 'dl2':
+
+                    self.camera_visu.overlay_moments(self.dl2_container.shower)
+
 
         else:
 
             print('Cannot compute for camera type : %s' % self.camera_view)
-        #print(np.max(self.image))
-        return np.ma.masked_where(np.logical_or(self.image<=self.colorbar_limits[0], self.image>=self.colorbar_limits[1]), self.image)
+        # print(np.max(self.image))
+        return np.ma.masked_where(
+            np.logical_or(self.image <= self.colorbar_limits[0], self.image >= self.colorbar_limits[1]), self.image)
 
     def press(self, event):
 
         sys.stdout.flush()
 
-        if event.key=='enter':
-
+        if event.key == 'enter':
             self.next()
 
-        if event.key=='right':
-
+        if event.key == 'right':
             self.set_time(self.time + 1)
 
-        if event.key=='left':
-
+        if event.key == 'left':
             self.set_time(self.time - 1)
 
-        if event.key=='+':
-
+        if event.key == '+':
             self.set_pixel(self.pixel_id + 1)
 
-        if event.key=='-':
-
+        if event.key == '-':
             self.set_pixel(self.pixel_id - 1)
 
         if event.key == 'h':
@@ -325,32 +336,29 @@ class EventViewer():
 
         self.axis_next_camera_view_button.set_visible(visible)
         self.axis_next_view_type_button.set_visible(visible)
-        #self.axis_slider_time.set_visible(visible)
+        # self.axis_slider_time.set_visible(visible)
         self.axis_next_event_button.set_visible(visible)
 
     def animate_pixel_scan(self, pixel_list, filename='test.mp4'):
 
         self.set_buttons_visible(visible=False)
 
-
         metadata = dict(title='Mapping Scan', artist='Digicam Film Studio')
         writer = animation.FFMpegWriter(fps=20, metadata=metadata)
 
-
-
-        #next_event = lambda i: self.next(event=None, index=i)
+        # next_event = lambda i: self.next(event=None, index=i)
 
         with writer.saving(self.figure, filename, 100):
 
-            #print(pixel_list)
-            #print(len(pixel_list))
+            # print(pixel_list)
+            # print(len(pixel_list))
 
             for i, pixel in enumerate(pixel_list[:-1]):
 
                 try:
 
                     self.pixel_id = pixel_list[i]
-                    #self.update()
+                    # self.update()
                     self.next()
                     writer.grab_frame()
 
@@ -362,28 +370,24 @@ class EventViewer():
         self.set_buttons_visible(visible=True)
 
 
-                    #ani = animation.FuncAnimation(self.figure, next_event, np.arange(0, 10, 1), blit=True, interval=10,
+        # ani = animation.FuncAnimation(self.figure, next_event, np.arange(0, 10, 1), blit=True, interval=10,
         #                        repeat=False)
 
-        #ani.save(filename, metada={'studio': 'DigiCam Films Production'})
-
+        # ani.save(filename, metada={'studio': 'DigiCam Films Production'})
 
     def animate_muon_scan(self, filename='muon.mp4', n_frames=10):
 
         self.set_buttons_visible(visible=False)
 
-
         metadata = dict(title='High threshold events', artist='Digicam Film Studio')
         writer = animation.FFMpegWriter(fps=10, metadata=metadata)
 
-
-
-        #next_event = lambda i: self.next(event=None, index=i)
+        # next_event = lambda i: self.next(event=None, index=i)
 
         with writer.saving(self.figure, filename, 100):
 
-            #print(pixel_list)
-            #print(len(pixel_list))
+            # print(pixel_list)
+            # print(len(pixel_list))
 
             for i in enumerate(range(n_frames)):
 
@@ -405,18 +409,18 @@ class EventViewer():
         self.set_buttons_visible(visible=True)
 
 
-                    #ani = animation.FuncAnimation(self.figure, next_event, np.arange(0, 10, 1), blit=True, interval=10,
+        # ani = animation.FuncAnimation(self.figure, next_event, np.arange(0, 10, 1), blit=True, interval=10,
         #                        repeat=False)
 
-        #ani.save(filename, metada={'studio': 'DigiCam Films Production'})
+        # ani.save(filename, metada={'studio': 'DigiCam Films Production'})
 
     def heat_map_animation(self, filename='hit_map.mp4', n_frames=500, limits_colormap=None):
 
-        #self.camera_view = 'std'
+        # self.camera_view = 'std'
 
         self.set_buttons_visible(visible=False)
 
-        self.figure = plt.figure(figsize=(10,10))
+        self.figure = plt.figure(figsize=(10, 10))
 
         self.axis_camera = self.figure.add_subplot(111)
         self.axis_camera.axis('off')
@@ -427,7 +431,7 @@ class EventViewer():
             self.camera_visu.set_limits_minmax(limits_colormap[0], limits_colormap[1])
 
         self.camera.image = self.compute_image()
-        #self.camera_visu.cmap.set_bad(color='w')
+        # self.camera_visu.cmap.set_bad(color='w')
         self.camera_visu.add_colorbar(orientation='horizontal', pad=0.03, fraction=0.05, shrink=.85)
 
         if self.scale == 'log':
@@ -448,34 +452,26 @@ class EventViewer():
             # print(len(pixel_list))
 
             for i in enumerate(range(n_frames)):
+                # try:
 
-                #try:
-
-                #print('hello')
+                # print('hello')
                 self.next()
 
-                #print(np.max(self.image))
+                # print(np.max(self.image))
 
-                #if np.max(self.image)<=self.threshold:
+                # if np.max(self.image)<=self.threshold:
 
                 self.draw_camera()
                 writer.grab_frame()
 
 
-                #except:
+                # except:
 
-                    #break
-
+                # break
 
         self.set_buttons_visible(visible=True)
 
 
-
 class Event_Clicked():
-
     def __init__(self, pixel_start):
         self.ind = [0, pixel_start]
-
-
-
-
