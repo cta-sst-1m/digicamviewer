@@ -279,6 +279,9 @@ class EventViewer():
 
             elif self.camera_view == 'r1':
 
+                self.image = np.max(self.r1_container.tel[self.telescope_id].adc_samples,axis=-1)
+
+            elif self.camera_view == 'dl0':
                 self.image = self.r1_container.tel[self.telescope_id].pe_samples
 
             elif self.camera_view == 'dl1' or self.camera_view == 'dl2':
