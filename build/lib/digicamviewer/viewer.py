@@ -216,7 +216,6 @@ class EventViewer2():
 
             elif self.readout_view_type == 'baseline substracted' and self.r1_container.adc_samples is not None:
 
-                print(self.r1_container)
 
                 image = np.array(list(self.r1_container.adc_samples.values()))
 
