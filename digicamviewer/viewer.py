@@ -35,6 +35,14 @@ class EventViewer2():
         self.dl0_container = None
         self.dl1_container = None
         self.dl2_container = None
+        self.trigger_output = None
+        self.trigger_input = None
+        self.trigger_patch = None
+        self.nsb = np.nan
+        self.gain_drop = np.nan
+        self.baseline = np.nan
+        self.std = np.nan
+        self.flag = None
 
         self.event_clicked_on = Event_Clicked(pixel_start=self.pixel_id)
         self.camera = camera.Camera(_config_file=camera_config_file)
@@ -42,9 +50,8 @@ class EventViewer2():
         self.n_pixels = len(self.camera.Pixels)
         self.n_samples = n_samples
 
-        self.readout_view_types = ['raw', 'baseline substracted', 'photon', 'trigger input', 'trigger output', 'patch', 'reconstruced charge']
+        self.readout_view_types = ['raw', 'baseline substracted', 'photon', 'trigger input', 'trigger output', 'patch', 'reconstructed charge']
         self.readout_view_type = 'raw'
-
 
         self.camera_view_types = ['sum', 'std', 'mean', 'max', 'time']
         self.camera_view_type = 'std'
@@ -60,9 +67,8 @@ class EventViewer2():
         self.axis_readout.yaxis.set_major_formatter(FormatStrFormatter('%d'))
         self.axis_readout.yaxis.set_major_locator(MaxNLocator(integer=True, nbins=10))
 
-        self.trace_readout, = self.axis_readout.step(np.arange(self.n_samples) * 4, np.ones(self.n_samples),
-                                                     label='%s : %d, bin : %d' % (self.readout_view_type, self.pixel_id, self.time_bin), where='mid')
-        self.trace_time_plot, = self.axis_readout.plot(np.array([self.time_bin, self.time_bin]) * 4, np.ones(2), color='r',
+        self.trace_readout, = self.axis_readout.step(np.arange(self.n_samples) * 4, np.ones(self.n_samples), where='mid')
+        self.trace_time_plot, = self.axis_readout.plot(np.array([self.time_bin, self.time_bin]) * 4, np.ones(2), color='k',
                                                        linestyle='--')
 
         self.camera_visu = visualization.CameraDisplay(self.geometry, ax=self.axis_camera, title='', norm=self.scale,
@@ -77,7 +83,7 @@ class EventViewer2():
 
         if self.scale == 'log':
             self.camera_visu.colorbar.set_norm(LogNorm(vmin=1, vmax=None, clip=False))
-        self.camera_visu.colorbar.set_label('[ADC]')
+        self.camera_visu.colorbar.set_label('[LSB]')
         self.camera_visu.axes.get_xaxis().set_visible(False)
         self.camera_visu.axes.get_yaxis().set_visible(False)
         self.camera_visu.on_pixel_clicked = self.draw_readout
@@ -110,7 +116,6 @@ class EventViewer2():
 
         for i, event_iterator in zip(range(step), self.event_stream):
 
-            print('hello')
             pass
 
         self.event_id = event_iterator.r0.event_id
@@ -119,6 +124,12 @@ class EventViewer2():
         self.dl0_container = event_iterator.dl0.tel[self.telescope_id]
         self.dl1_container = event_iterator.dl1.tel[self.telescope_id]
         self.dl2_container = event_iterator.dl2
+        zero_image = np.zeros((self.n_pixels, self.n_samples))
+        self.baseline = self.r0_container.baseline if self.r0_container.baseline is not None else np.nan * zero_image
+        self.std = self.r0_container.standard_deviation if self.r0_container.standard_deviation is not None else np.nan * zero_image
+        self.flag = self.r0_container.flag if self.r0_container.flag is not None else np.nan * zero_image
+        self.nsb = self.r1_container.nsb if self.r1_container.adc_samples is not None else np.nan * zero_image
+        self.gain_drop = self.r1_container.gain_drop if self.r1_container.adc_samples is not None else np.nan * zero_image
 
         if self.first_call:
 
@@ -157,11 +168,23 @@ class EventViewer2():
         self.pixel_id = pixel
         self.event_clicked_on.ind[-1] = self.pixel_id
         self.trace_readout.set_ydata(y)
-        self.trace_readout.set_label('%s : %d, bin : %d' % (self.readout_view_type, self.pixel_id, self.time_bin))
+        self.trace_readout.set_label(
+            '%s : %d, bin : %d \n Flag = %0.1f \n $B= %0.2f$ [LSB] \n $\sigma = %0.2f$ [LSB]'
+            ' \n $f_{nsb} = %0.2f$ [GHz] \n $G_{drop}= %0.2f$'
+            % (self.readout_view_type, self.pixel_id, self.time_bin, self.flag,
+               self.baseline[self.pixel_id], self.std[self.pixel_id], self.nsb[self.pixel_id], self.gain_drop[self.pixel_id]))
         self.trace_time_plot.set_ydata(limits_y)
         self.trace_time_plot.set_xdata(self.time_bin * 4)
         self.axis_readout.set_ylim(limits_y)
         self.axis_readout.legend(loc='upper right')
+
+        if self.readout_view_type in ['photon', 'reconstructed charge']:
+
+            self.axis_readout.set_ylabel('[p.e.]')
+
+        else:
+
+            self.axis_readout.set_ylabel('[LSB]')
 
     def compute_trace(self):
 
@@ -171,42 +194,48 @@ class EventViewer2():
 
                 image = np.array(list(self.r0_container.adc_samples.values()))
 
-            elif self.readout_view_type == 'trigger output':
+            elif self.readout_view_type == 'trigger output' and self.trigger_output is not None:
 
                 # image = np.array([self.trigger_output[pixel.patch] for pixel in self.camera.Pixels])
                 image = np.zeros((self.n_pixels, self.n_samples))
                 print('%s not implemented' % self.readout_view_type)
 
-            elif self.readout_view_type == 'trigger input':
+            elif self.readout_view_type == 'trigger input' and self.trigger_input is not None:
 
                 image = np.zeros((self.n_pixels, self.n_samples))
                 print('%s not implemented' % self.readout_view_type)
 
-            elif self.readout_view_type == 'patch':
+            elif self.readout_view_type == 'patch' and self.trigger_patch is not None:
 
                 image = np.zeros((self.n_pixels, self.n_samples))
                 print('%s not implemented' % self.readout_view_type)
 
-            elif self.readout_view_type == 'photon':
+            elif self.readout_view_type == 'photon' and self.dl1_container.pe_samples_trace is not None:
 
                 image = self.dl1_container.pe_samples_trace
 
-            elif self.readout_view_type == 'baseline substracted':
+            elif self.readout_view_type == 'baseline substracted' and self.r1_container.adc_samples is not None:
+
+                print(self.r1_container)
 
                 image = np.array(list(self.r1_container.adc_samples.values()))
 
-            elif self.readout_view_type == 'reconstruced charge':
+            elif self.readout_view_type == 'reconstructed charge' and (self.dl1_container.time_bin is not None or self.dl1_container.pe_samples is not None):
 
                 image = np.zeros((self.n_pixels, self.n_samples))
                 time_bins = self.dl1_container.time_bin
                 image[time_bins] = self.dl1_container.pe_samples
+
+            else:
+
+                image = np.zeros((self.n_pixels, self.n_samples))
 
         return image
 
     def next_camera_view(self, camera_view, event=None):
 
         self.camera_view_type = camera_view
-        if self.readout_view_type == 'p.e.':
+        if self.readout_view_type in ['photon','reconstructed charge']:
             self.camera_visu.colorbar.set_label('[p.e.]')
 
         else:
@@ -217,6 +246,16 @@ class EventViewer2():
     def next_view_type(self, view_type, event=None):
 
         self.readout_view_type = view_type
+
+        if view_type in ['photon', 'reconstructed charge']:
+            self.camera_visu.colorbar.set_label('[p.e.]')
+
+        else:
+            self.camera_visu.colorbar.set_label('[LSB]')
+
+
+
+
         self.update()
 
     def draw_on_camera(self, to_draw_on, event=None):
@@ -368,7 +407,7 @@ class EventViewer():
 
         self.axis_readout = self.figure.add_subplot(122)
         self.axis_readout.set_xlabel('t [ns]')
-        self.axis_readout.set_ylabel('[ADC]')
+        self.axis_readout.set_ylabel('[LSB]')
         self.axis_readout.legend(loc='upper right')
         self.axis_readout.yaxis.set_major_formatter(FormatStrFormatter('%d'))
         self.axis_readout.yaxis.set_major_locator(MaxNLocator(integer=True, nbins=10))
@@ -394,7 +433,6 @@ class EventViewer():
 
         if self.scale == 'log':
             self.camera_visu.colorbar.set_norm(LogNorm(vmin=1, vmax=None, clip=False))
-        self.camera_visu.colorbar.set_label('[ADC]')
         self.camera_visu.axes.get_xaxis().set_visible(False)
         self.camera_visu.axes.get_yaxis().set_visible(False)
         self.camera_visu.on_pixel_clicked = self.draw_readout
