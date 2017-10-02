@@ -1,6 +1,6 @@
 import numpy as np
 import sys
-from ctapipe import visualization
+from digicampipe.visualization import mpl as visualization
 from . import geometry
 import matplotlib.pyplot as plt
 from matplotlib.ticker import FormatStrFormatter, MaxNLocator
@@ -29,6 +29,13 @@ class EventViewer2():
         self.mask_pixels = False
         self.hillas = False
 
+        self.event_clicked_on = Event_Clicked(pixel_start=self.pixel_id)
+        self.camera = camera.Camera(_config_file=camera_config_file)
+        self.geometry = geometry.generate_geometry(camera=self.camera)[0]
+        self.n_pixels = len(self.camera.Pixels)
+        self.n_samples = n_samples
+
+
         self.event_id = None
         self.r0_container = None
         self.r1_container = None
@@ -38,17 +45,11 @@ class EventViewer2():
         self.trigger_output = None
         self.trigger_input = None
         self.trigger_patch = None
-        self.nsb = np.nan
-        self.gain_drop = np.nan
-        self.baseline = np.nan
-        self.std = np.nan
+        self.nsb = [np.nan]*self.n_pixels
+        self.gain_drop = [np.nan]*self.n_pixels
+        self.baseline = [np.nan]*self.n_pixels
+        self.std = [np.nan]*self.n_pixels
         self.flag = None
-
-        self.event_clicked_on = Event_Clicked(pixel_start=self.pixel_id)
-        self.camera = camera.Camera(_config_file=camera_config_file)
-        self.geometry = geometry.generate_geometry(camera=self.camera)[0]
-        self.n_pixels = len(self.camera.Pixels)
-        self.n_samples = n_samples
 
         self.readout_view_types = ['raw', 'baseline substracted', 'photon', 'trigger input', 'trigger output', 'patch', 'reconstructed charge']
         self.readout_view_type = 'raw'
@@ -74,15 +75,15 @@ class EventViewer2():
         self.camera_visu = visualization.CameraDisplay(self.geometry, ax=self.axis_camera, title='', norm=self.scale,
                                                        cmap='viridis',
                                                        allow_pick=True)
-        if limits_colormap is not None:
-            self.camera_visu.set_limits_minmax(limits_colormap[0], limits_colormap[1])
+        #if limits_colormap is not None:
+        #    self.camera_visu.set_limits_minmax(limits_colormap[0], limits_colormap[1])
 
         self.camera_visu.image = np.zeros(self.n_pixels)
         self.camera_visu.cmap.set_bad(color='k')
         self.camera_visu.add_colorbar(orientation='horizontal', pad=0.03, fraction=0.05, shrink=.85)
 
-        if self.scale == 'log':
-            self.camera_visu.colorbar.set_norm(LogNorm(vmin=1, vmax=None, clip=False))
+        #if self.scale == 'log':
+        #    self.camera_visu.colorbar.set_norm(LogNorm(vmin=1, vmax=None, clip=False))
         self.camera_visu.colorbar.set_label('[LSB]')
         self.camera_visu.axes.get_xaxis().set_visible(False)
         self.camera_visu.axes.get_yaxis().set_visible(False)
@@ -124,12 +125,19 @@ class EventViewer2():
         self.dl0_container = event_iterator.dl0.tel[self.telescope_id]
         self.dl1_container = event_iterator.dl1.tel[self.telescope_id]
         self.dl2_container = event_iterator.dl2
+        self.trigger_output = np.array(list(self.r0_container.trigger_output_patch7.values()))
         zero_image = np.zeros((self.n_pixels, self.n_samples))
+
+        # self.baseline = self.r0_container.baseline if self.r0_container.baseline.default is not None else np.nan * zero_image
         self.baseline = self.r0_container.baseline if self.r0_container.baseline is not None else np.nan * zero_image
+        # self.std = self.r0_container.standard_deviation if self.r0_container.standard_deviation.default is not None else np.nan * zero_image
         self.std = self.r0_container.standard_deviation if self.r0_container.standard_deviation is not None else np.nan * zero_image
-        self.flag = self.r0_container.flag if self.r0_container.flag is not None else np.nan * zero_image
-        self.nsb = self.r1_container.nsb if self.r1_container.adc_samples is not None else np.nan * zero_image
-        self.gain_drop = self.r1_container.gain_drop if self.r1_container.adc_samples is not None else np.nan * zero_image
+        # self.flag = self.r0_container.flag if self.r0_container.flag.default is not None else np.nan
+        self.flag = self.r0_container.flag if self.r0_container.flag is not None else np.nan
+        # self.nsb = self.r1_container.nsb if self.r1_container.nsb.default is not None else np.nan * zero_image
+        self.nsb = self.r1_container.nsb if self.r1_container.nsb is not None else np.nan * zero_image
+        # self.gain_drop = self.r1_container.gain_drop if self.r1_container.gain_drop.default is not None else np.nan * zero_image
+        self.gain_drop = self.r1_container.gain_drop if self.r1_container.gain_drop is not None else np.nan * zero_image
 
         if self.first_call:
 
@@ -168,11 +176,11 @@ class EventViewer2():
         self.pixel_id = pixel
         self.event_clicked_on.ind[-1] = self.pixel_id
         self.trace_readout.set_ydata(y)
-        self.trace_readout.set_label(
-            '%s : %d, bin : %d \n Flag = %0.1f \n $B= %0.2f$ [LSB] \n $\sigma = %0.2f$ [LSB]'
-            ' \n $f_{nsb} = %0.2f$ [GHz] \n $G_{drop}= %0.2f$'
-            % (self.readout_view_type, self.pixel_id, self.time_bin, self.flag,
-               self.baseline[self.pixel_id], self.std[self.pixel_id], self.nsb[self.pixel_id], self.gain_drop[self.pixel_id]))
+        #self.trace_readout.set_label(
+        #    '%s : %d, bin : %d \n Flag = %0.1f \n $B= %0.2f$ [LSB] \n $\sigma = %0.2f$ [LSB]'
+        #    ' \n $f_{nsb} = %0.2f$ [GHz] \n $G_{drop}= %0.2f$'
+        #    % (self.readout_view_type, self.pixel_id, self.time_bin, self.flag,
+        #       self.baseline[self.pixel_id], self.std[self.pixel_id], self.nsb[self.pixel_id], self.gain_drop[self.pixel_id]))
         self.trace_time_plot.set_ydata(limits_y)
         self.trace_time_plot.set_xdata(self.time_bin * 4)
         self.axis_readout.set_ylim(limits_y)
@@ -196,8 +204,8 @@ class EventViewer2():
 
             elif self.readout_view_type == 'trigger output' and self.trigger_output is not None:
 
-                # image = np.array([self.trigger_output[pixel.patch] for pixel in self.camera.Pixels])
-                image = np.zeros((self.n_pixels, self.n_samples))
+                image = np.array([self.trigger_output[pixel.patch] for pixel in self.camera.Pixels])
+                # = np.zeros((self.n_pixels, self.n_samples))
                 print('%s not implemented' % self.readout_view_type)
 
             elif self.readout_view_type == 'trigger input' and self.trigger_input is not None:
@@ -215,7 +223,6 @@ class EventViewer2():
                 image = self.dl1_container.pe_samples_trace
 
             elif self.readout_view_type == 'baseline substracted' and self.r1_container.adc_samples is not None:
-
 
                 image = np.array(list(self.r1_container.adc_samples.values()))
 
@@ -326,17 +333,23 @@ class EventViewer2():
 
         if self.limits_colormap is not None:
 
-            mask = (self.image >= self.limits_colormap[0]) * (self.image <= self.limits_colormap[1])
+            mask = (self.image >= self.limits_colormap[0])
+            if not self.limits_colormap[1] == np.inf:
+                image[(self.image > self.limits_colormap[1])] = self.limits_colormap[1]
 
-        # if self.mask_pixels:
+        if self.mask_pixels:
 
             #mask = mask * self.dl1_container.cleaning_mask
-            image[self.dl1_container.cleaning_mask] = 0
-
+            mask = mask * self.dl1_container.cleaning_mask
+            #image[~self.dl1_container.cleaning_mask] = 0
 
         if self.hillas:
 
-            self.camera_visu.overlay_moments(self.dl2_container.shower)
+            self.camera_visu.overlay_moments(self.dl2_container.shower, color='r', linewidth=4)
+
+        else:
+
+            self.camera_visu.clear_overlays()
 
         return np.ma.masked_where(~mask, self.image)
 
@@ -423,15 +436,19 @@ class EventViewer():
         self.camera_visu = visualization.CameraDisplay(self.geometry, ax=self.axis_camera, title='', norm=self.scale,
                                                        cmap='viridis',
                                                        allow_pick=True)
+
+        self.camera_visu.add_colorbar(orientation='horizontal', pad=0.03, fraction=0.05, shrink=.85)
+
+        if self.scale == 'log':
+            self.camera_visu.colorbar.set_norm(LogNorm(vmin=1, vmax=None, clip=False))
+
         if limits_colormap is not None:
             self.camera_visu.set_limits_minmax(limits_colormap[0], limits_colormap[1])
 
         self.camera_visu.image = np.zeros(self.n_pixels)
         self.camera_visu.cmap.set_bad(color='k')
-        self.camera_visu.add_colorbar(orientation='horizontal', pad=0.03, fraction=0.05, shrink=.85)
 
-        if self.scale == 'log':
-            self.camera_visu.colorbar.set_norm(LogNorm(vmin=1, vmax=None, clip=False))
+
         self.camera_visu.axes.get_xaxis().set_visible(False)
         self.camera_visu.axes.get_yaxis().set_visible(False)
         self.camera_visu.on_pixel_clicked = self.draw_readout
