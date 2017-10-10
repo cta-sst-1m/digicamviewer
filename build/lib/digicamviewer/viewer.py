@@ -72,18 +72,18 @@ class EventViewer2():
         self.trace_time_plot, = self.axis_readout.plot(np.array([self.time_bin, self.time_bin]) * 4, np.ones(2), color='k',
                                                        linestyle='--')
 
-        self.camera_visu = visualization.CameraDisplay(self.geometry, ax=self.axis_camera, title='',
+        self.camera_visu = visualization.CameraDisplay(self.geometry, ax=self.axis_camera, title='', norm=self.scale,
                                                        cmap='viridis',
                                                        allow_pick=True)
-        if limits_colormap is not None:
-            self.camera_visu.set_limits_minmax(limits_colormap[0], limits_colormap[1])
+        #if limits_colormap is not None:
+        #    self.camera_visu.set_limits_minmax(limits_colormap[0], limits_colormap[1])
 
         self.camera_visu.image = np.zeros(self.n_pixels)
         self.camera_visu.cmap.set_bad(color='k')
         self.camera_visu.add_colorbar(orientation='horizontal', pad=0.03, fraction=0.05, shrink=.85)
 
-        if self.scale == 'log':
-            self.camera_visu.colorbar.set_norm(LogNorm(vmin=1, vmax=None, clip=False))
+        #if self.scale == 'log':
+        #    self.camera_visu.colorbar.set_norm(LogNorm(vmin=1, vmax=None, clip=False))
         self.camera_visu.colorbar.set_label('[LSB]')
         self.camera_visu.axes.get_xaxis().set_visible(False)
         self.camera_visu.axes.get_yaxis().set_visible(False)
@@ -126,6 +126,7 @@ class EventViewer2():
         self.dl1_container = event_iterator.dl1.tel[self.telescope_id]
         self.dl2_container = event_iterator.dl2
         self.trigger_output = np.array(list(self.r0_container.trigger_output_patch7.values()))
+        self.trigger_input = np.array(list(self.r0_container.trigger_input_traces.values()))
         zero_image = np.zeros((self.n_pixels, self.n_samples))
 
         # self.baseline = self.r0_container.baseline if self.r0_container.baseline.default is not None else np.nan * zero_image
@@ -133,7 +134,7 @@ class EventViewer2():
         # self.std = self.r0_container.standard_deviation if self.r0_container.standard_deviation.default is not None else np.nan * zero_image
         self.std = self.r0_container.standard_deviation if self.r0_container.standard_deviation is not None else np.nan * zero_image
         # self.flag = self.r0_container.flag if self.r0_container.flag.default is not None else np.nan
-        self.flag = self.r0_container.flag if self.r0_container.flag is not None else np.nan
+        self.flag = self.r0_container.event_type_1 if self.r0_container.event_type_1 is not None else np.nan
         # self.nsb = self.r1_container.nsb if self.r1_container.nsb.default is not None else np.nan * zero_image
         self.nsb = self.r1_container.nsb if self.r1_container.nsb is not None else np.nan * zero_image
         # self.gain_drop = self.r1_container.gain_drop if self.r1_container.gain_drop.default is not None else np.nan * zero_image
@@ -176,7 +177,7 @@ class EventViewer2():
         self.pixel_id = pixel
         self.event_clicked_on.ind[-1] = self.pixel_id
         self.trace_readout.set_ydata(y)
-        #self.trace_readout.set_label(
+        # self.trace_readout.set_label(
         #    '%s : %d, bin : %d \n Flag = %0.1f \n $B= %0.2f$ [LSB] \n $\sigma = %0.2f$ [LSB]'
         #    ' \n $f_{nsb} = %0.2f$ [GHz] \n $G_{drop}= %0.2f$'
         #    % (self.readout_view_type, self.pixel_id, self.time_bin, self.flag,
@@ -210,7 +211,7 @@ class EventViewer2():
 
             elif self.readout_view_type == 'trigger input' and self.trigger_input is not None:
 
-                image = np.zeros((self.n_pixels, self.n_samples))
+                image = np.array([self.trigger_input[pixel.patch] for pixel in self.camera.Pixels]) #np.zeros((self.n_pixels, self.n_samples))
                 print('%s not implemented' % self.readout_view_type)
 
             elif self.readout_view_type == 'patch' and self.trigger_patch is not None:
@@ -335,7 +336,7 @@ class EventViewer2():
 
             mask = (self.image >= self.limits_colormap[0])
             if not self.limits_colormap[1] == np.inf:
-                image[(self.image <= self.limits_colormap[1])] = self.limits_colormap[1]
+                image[(self.image > self.limits_colormap[1])] = self.limits_colormap[1]
 
         if self.mask_pixels:
 
@@ -588,6 +589,9 @@ class EventViewer():
                 image = np.array([self.trigger_output[pixel.patch] for pixel in self.camera.Pixels])
 
             elif self.view_type == 'trigger_in':
+
+
+                image = np.array([self.trigger_input[pixel.patch] for pixel in self.camera.Pixels])
 
                 image = np.zeros(self.data_r0.shape)
                 print('%s not implemented' % self.view_type)

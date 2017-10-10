@@ -29,7 +29,7 @@ class EventViewer2():
         self.mask_pixels = False
         self.hillas = False
 
-        self.event_clicked_on = Event_Clicked(pixel_start=self.pixel_id)
+        self.event_clicked_on = EventClicked(pixel_start=self.pixel_id)
         self.camera = camera.Camera(_config_file=camera_config_file)
         self.geometry = geometry.generate_geometry(camera=self.camera)[0]
         self.n_pixels = len(self.camera.Pixels)
@@ -379,6 +379,7 @@ class EventViewer2():
         self.update()
 
 
-class Event_Clicked():
+class EventClicked:
+
     def __init__(self, pixel_start):
         self.ind = [0, pixel_start]
