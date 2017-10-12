@@ -11,6 +11,7 @@ import matplotlib as mpl
 import scipy.stats
 import matplotlib.animation as animation
 from cts_core import camera
+import astropy.units as u
 
 
 class EventViewer2():
@@ -75,6 +76,7 @@ class EventViewer2():
         self.camera_visu = visualization.CameraDisplay(self.geometry, ax=self.axis_camera, title='', norm=self.scale,
                                                        cmap='viridis',
                                                        allow_pick=True)
+
         #if limits_colormap is not None:
         #    self.camera_visu.set_limits_minmax(limits_colormap[0], limits_colormap[1])
 
@@ -88,6 +90,9 @@ class EventViewer2():
         self.camera_visu.axes.get_xaxis().set_visible(False)
         self.camera_visu.axes.get_yaxis().set_visible(False)
         self.camera_visu.on_pixel_clicked = self.draw_readout
+        self.camera_visu.pixels.set_snap(False)  # snap cursor to pixel center
+
+#        self.camera_visu.pixels.set_picker(False)
 
         # Buttons
 

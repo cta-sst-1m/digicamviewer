@@ -21,7 +21,7 @@ def generate_geometry(camera):
         pix_id.append(pix.ID)
 
     neighbors_pix = find_neighbor_pixels(pix_x, pix_y, 30.)
-    geom = CameraGeometry(0, pix_id, pix_x * u.mm, pix_y * u.mm, np.ones(1296) * 400., neighbors_pix, 'hexagonal')
+    geom = CameraGeometry(0, pix_id, pix_x * u.mm, pix_y * u.mm, np.ones(1296) * 482.41, neighbors_pix, 'hexagonal')
 
     return geom, pix_id
 
