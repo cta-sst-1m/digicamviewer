@@ -11,5 +11,5 @@ setup(
     author_email='cyril.alispach@gmail.com',
     long_description=open('README.md').read(),
     description='A package for viewing DigiCam images',
-    requires=['numpy', 'astropy', 'matplotlib', 'scipy', 'digicampipe'],
+    requires=['numpy', 'astropy', 'matplotlib', 'scipy', 'digicampipe', 'bokeh', 'pandas'],
 )

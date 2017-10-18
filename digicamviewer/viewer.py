@@ -35,7 +35,12 @@ class EventViewer2():
         self.geometry = geometry.generate_geometry(camera=self.camera)[0]
         self.n_pixels = len(self.camera.Pixels)
         self.n_samples = n_samples
+        self.cluster_matrix = np.zeros((len(self.camera.Clusters_7), len(self.camera.Clusters_7)))
 
+        for cluster in self.camera.Clusters_7:
+
+            for patch in cluster.patchesID:
+                self.cluster_matrix[cluster.ID, patch] = 1
 
         self.event_id = None
         self.r0_container = None
@@ -52,7 +57,7 @@ class EventViewer2():
         self.std = [np.nan]*self.n_pixels
         self.flag = None
 
-        self.readout_view_types = ['raw', 'baseline substracted', 'photon', 'trigger input', 'trigger output', 'patch', 'reconstructed charge']
+        self.readout_view_types = ['raw', 'baseline substracted', 'photon', 'trigger input', 'trigger output', 'cluster 7', 'reconstructed charge']
         self.readout_view_type = 'raw'
 
         self.camera_view_types = ['sum', 'std', 'mean', 'max', 'time']
@@ -130,12 +135,14 @@ class EventViewer2():
         self.dl0_container = event_iterator.dl0.tel[self.telescope_id]
         self.dl1_container = event_iterator.dl1.tel[self.telescope_id]
         self.dl2_container = event_iterator.dl2
-        self.trigger_output = np.array(list(self.r0_container.trigger_output_patch7.values()))
-        self.trigger_input = np.array(list(self.r0_container.trigger_input_traces.values()))
+        self.adc_samples = self.r0_container.adc_samples
+        self.trigger_output = self.r0_container.trigger_output_patch7
+        self.trigger_input = self.r0_container.trigger_input_traces
+        self.baseline = self.r0_container.digicam_baseline
         zero_image = np.zeros((self.n_pixels, self.n_samples))
 
         # self.baseline = self.r0_container.baseline if self.r0_container.baseline.default is not None else np.nan * zero_image
-        self.baseline = self.r0_container.baseline if self.r0_container.baseline is not None else np.nan * zero_image
+        # self.baseline = self.r0_container.baseline if self.r0_container.baseline is not None else np.nan * zero_image
         # self.std = self.r0_container.standard_deviation if self.r0_container.standard_deviation.default is not None else np.nan * zero_image
         self.std = self.r0_container.standard_deviation if self.r0_container.standard_deviation is not None else np.nan * zero_image
         # self.flag = self.r0_container.flag if self.r0_container.flag.default is not None else np.nan
@@ -182,7 +189,7 @@ class EventViewer2():
         self.pixel_id = pixel
         self.event_clicked_on.ind[-1] = self.pixel_id
         self.trace_readout.set_ydata(y)
-        # self.trace_readout.set_label(
+        self.trace_readout.set_label('pixel : {} bin {} \n baseline : {} [LSB]'.format(self.pixel_id, self.time_bin, self.baseline[self.pixel_id]))
         #    '%s : %d, bin : %d \n Flag = %0.1f \n $B= %0.2f$ [LSB] \n $\sigma = %0.2f$ [LSB]'
         #    ' \n $f_{nsb} = %0.2f$ [GHz] \n $G_{drop}= %0.2f$'
         #    % (self.readout_view_type, self.pixel_id, self.time_bin, self.flag,
@@ -206,7 +213,7 @@ class EventViewer2():
 
             if self.readout_view_type == 'raw':
 
-                image = np.array(list(self.r0_container.adc_samples.values()))
+                image = self.adc_samples
 
             elif self.readout_view_type == 'trigger output' and self.trigger_output is not None:
 
@@ -216,10 +223,10 @@ class EventViewer2():
 
                 image = np.array([self.trigger_input[pixel.patch] for pixel in self.camera.Pixels]) #np.zeros((self.n_pixels, self.n_samples))
 
-            elif self.readout_view_type == 'patch' and self.trigger_patch is not None:
+            elif self.readout_view_type == 'cluster 7' and self.trigger_input is not None:
 
-                image = np.zeros((self.n_pixels, self.n_samples))
-                print('%s not implemented' % self.readout_view_type)
+                trigger_input_patch = np.dot(self.cluster_matrix, self.trigger_input)
+                image = np.array([trigger_input_patch[pixel.patch] for pixel in self.camera.Pixels])
 
             elif self.readout_view_type == 'photon' and self.dl1_container.pe_samples_trace is not None:
 
@@ -227,7 +234,7 @@ class EventViewer2():
 
             elif self.readout_view_type == 'baseline substracted' and self.r1_container.adc_samples is not None:
 
-                image = np.array(list(self.r1_container.adc_samples.values()))
+                image = self.adc_samples - self.r0_container.digicam_baseline[:, np.newaxis]
 
             elif self.readout_view_type == 'reconstructed charge' and (self.dl1_container.time_bin is not None or self.dl1_container.pe_samples is not None):
 
