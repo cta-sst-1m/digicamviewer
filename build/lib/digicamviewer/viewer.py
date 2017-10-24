@@ -190,15 +190,48 @@ class EventViewer2():
         self.pixel_id = pixel
         self.event_clicked_on.ind[-1] = self.pixel_id
         self.trace_readout.set_ydata(y)
-        self.trace_readout.set_label('flag = {}, pixel = {}, bin = {} \n B = {:0.2f} [LSB], '
-                                     ' $\sigma = $ {:0.2f} [LSB] \n $G_{{drop}} = $ {:0.2f}, $f_{{nsb}} = $ {:0.2f} [GHz]'.
-                                    format(self.flag, self.pixel_id, self.time_bin, self.baseline[self.pixel_id],
-                                            self.std[self.pixel_id], self.gain_drop[self.pixel_id],
-                                            self.nsb[self.pixel_id]))
-        #    '%s : %d, bin : %d \n Flag = %0.1f \n $B= %0.2f$ [LSB] \n $\sigma = %0.2f$ [LSB]'
-        #    ' \n $f_{nsb} = %0.2f$ [GHz] \n $G_{drop}= %0.2f$'
-        #    % (self.readout_view_type, self.pixel_id, self.time_bin, self.flag,
-        #       self.baseline[self.pixel_id], self.std[self.pixel_id], self.nsb[self.pixel_id], self.gain_drop[self.pixel_id]))
+
+        legend = ''
+
+        try:
+
+            legend += ' flag = {},'.format(self.flag)
+
+        except:
+
+            pass
+
+
+        legend += ' pixel = {},'.format(self.pixel_id)
+        legend += ' bin = {} \n'.format(self.time_bin)
+
+        try:
+
+            legend += ' B = {:0.2f} [LSB],'.format(self.baseline[self.pixel_id])
+
+        except:
+
+            pass
+
+        try:
+
+            legend +=' $\sigma = $ {:0.2f} [LSB] \n'.format(self.std[self.pixel_id])
+
+        except:
+
+            pass
+
+        try:
+
+            legend += ' $G_{{drop}} = $ {:0.2f},'.format(self.gain_drop[self.pixel_id])
+            legend += ' $f_{{nsb}} = $ {:0.2f} [GHz]'.format(self.nsb[self.pixel_id])
+
+        except:
+
+            pass
+
+
+        self.trace_readout.set_label(legend)
         self.trace_time_plot.set_ydata(limits_y)
         self.trace_time_plot.set_xdata(self.time_bin * 4)
         self.axis_readout.set_ylim(limits_y)
@@ -219,7 +252,6 @@ class EventViewer2():
             if self.readout_view_type == 'raw':
 
                 image = self.adc_samples
-                print(image.shape)
 
             elif self.readout_view_type == 'trigger output' and self.trigger_output is not None:
 
