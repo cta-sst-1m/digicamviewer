@@ -138,19 +138,20 @@ class EventViewer2():
         self.adc_samples = self.r0_container.adc_samples
         self.trigger_output = self.r0_container.trigger_output_patch7
         self.trigger_input = self.r0_container.trigger_input_traces
-        self.baseline = self.r0_container.digicam_baseline
-        zero_image = np.zeros((self.n_pixels, self.n_samples))
 
-        # self.baseline = self.r0_container.baseline if self.r0_container.baseline.default is not None else np.nan * zero_image
-        # self.baseline = self.r0_container.baseline if self.r0_container.baseline is not None else np.nan * zero_image
-        # self.std = self.r0_container.standard_deviation if self.r0_container.standard_deviation.default is not None else np.nan * zero_image
-        self.std = self.r0_container.standard_deviation if self.r0_container.standard_deviation is not None else np.nan * zero_image
-        # self.flag = self.r0_container.flag if self.r0_container.flag.default is not None else np.nan
-        self.flag = self.r0_container.event_type_1 if self.r0_container.event_type_1 is not None else np.nan
-        # self.nsb = self.r1_container.nsb if self.r1_container.nsb.default is not None else np.nan * zero_image
-        self.nsb = self.r1_container.nsb if self.r1_container.nsb is not None else np.nan * zero_image
-        # self.gain_drop = self.r1_container.gain_drop if self.r1_container.gain_drop.default is not None else np.nan * zero_image
-        self.gain_drop = self.r1_container.gain_drop if self.r1_container.gain_drop is not None else np.nan * zero_image
+        try:
+
+            self.baseline = self.r0_container.baseline if np.isnan(self.r0_container.digicam_baseline).all() else self.r0_container.digicam_baseline
+            zero_image = np.zeros((self.n_pixels, self.n_samples))
+
+            self.std = self.r0_container.standard_deviation if self.r0_container.standard_deviation is not None else np.nan * zero_image
+            self.flag = self.r0_container.event_type_1 if self.r0_container.event_type_1 is not None else np.nan
+            self.nsb = self.r1_container.nsb if self.r1_container.nsb is not None else np.nan * zero_image
+            self.gain_drop = self.r1_container.gain_drop if self.r1_container.gain_drop is not None else np.nan * zero_image
+
+        except:
+
+            pass
 
         if self.first_call:
 
@@ -189,7 +190,11 @@ class EventViewer2():
         self.pixel_id = pixel
         self.event_clicked_on.ind[-1] = self.pixel_id
         self.trace_readout.set_ydata(y)
-        self.trace_readout.set_label('pixel : {} bin {} \n baseline : {} [LSB]'.format(self.pixel_id, self.time_bin, self.baseline[self.pixel_id]))
+        self.trace_readout.set_label('flag = {}, pixel = {}, bin = {} \n B = {:0.2f} [LSB], '
+                                     ' $\sigma = $ {:0.2f} [LSB] \n $G_{{drop}} = $ {:0.2f}, $f_{{nsb}} = $ {:0.2f} [GHz]'.
+                                    format(self.flag, self.pixel_id, self.time_bin, self.baseline[self.pixel_id],
+                                            self.std[self.pixel_id], self.gain_drop[self.pixel_id],
+                                            self.nsb[self.pixel_id]))
         #    '%s : %d, bin : %d \n Flag = %0.1f \n $B= %0.2f$ [LSB] \n $\sigma = %0.2f$ [LSB]'
         #    ' \n $f_{nsb} = %0.2f$ [GHz] \n $G_{drop}= %0.2f$'
         #    % (self.readout_view_type, self.pixel_id, self.time_bin, self.flag,
@@ -214,6 +219,7 @@ class EventViewer2():
             if self.readout_view_type == 'raw':
 
                 image = self.adc_samples
+                print(image.shape)
 
             elif self.readout_view_type == 'trigger output' and self.trigger_output is not None:
 
@@ -234,7 +240,7 @@ class EventViewer2():
 
             elif self.readout_view_type == 'baseline substracted' and self.r1_container.adc_samples is not None:
 
-                image = self.adc_samples - self.r0_container.digicam_baseline[:, np.newaxis]
+                image = self.adc_samples - self.baseline[:, np.newaxis]
 
             elif self.readout_view_type == 'reconstructed charge' and (self.dl1_container.time_bin is not None or self.dl1_container.pe_samples is not None):
 
