@@ -14,7 +14,7 @@ from cts_core import camera
 import astropy.units as u
 
 
-class EventViewer2():
+class EventViewer():
 
     def __init__(self, event_stream, camera_config_file, n_samples, scale='lin', limits_colormap=None, limits_readout=None, time_bin_start=0, pixel_id_start=0, telescope_id_start=1):
 
@@ -117,16 +117,9 @@ class EventViewer2():
         self.radio_button_next_view_type.set_active(self.readout_view_types.index(self.readout_view_type))
         self.radio_button_next_camera_view.set_active(self.camera_view_types.index(self.camera_view_type))
 
-    #def __next__(self):
-
-    #    self.next(step=1)
-
-    #    return self.event_stream
-
     def next(self, event=None, step=1):
 
         for i, event_iterator in zip(range(step), self.event_stream):
-
             pass
 
         self.event_id = event_iterator.r0.event_id
@@ -145,7 +138,7 @@ class EventViewer2():
             zero_image = np.zeros((self.n_pixels, self.n_samples))
 
             self.std = self.r0_container.standard_deviation if self.r0_container.standard_deviation is not None else np.nan * zero_image
-            self.flag = self.r0_container.event_type_1 if self.r0_container.event_type_1 is not None else np.nan
+            self.flag = self.r0_container.camera_event_type if self.r0_container.camera_event_type is not None else np.nan
             self.nsb = self.r1_container.nsb if self.r1_container.nsb is not None else np.nan * zero_image
             self.gain_drop = self.r1_container.gain_drop if self.r1_container.gain_drop is not None else np.nan * zero_image
 

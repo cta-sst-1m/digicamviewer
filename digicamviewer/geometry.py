@@ -1,5 +1,5 @@
-from ctapipe.io.camera import CameraGeometry
-from ctapipe.io.camera import find_neighbor_pixels
+from ctapipe.instrument.camera import CameraGeometry
+from ctapipe.instrument.camera import _find_neighbor_pixels
 import numpy as np
 import astropy.units as u
 
@@ -20,8 +20,9 @@ def generate_geometry(camera):
         pix_y.append(pix.center[1])
         pix_id.append(pix.ID)
 
-    neighbors_pix = find_neighbor_pixels(pix_x, pix_y, 30.)
-    geom = CameraGeometry(0, pix_id, pix_x * u.mm, pix_y * u.mm, np.ones(1296) * 482.41, neighbors_pix, 'hexagonal')
+    neighbors_pix = _find_neighbor_pixels(pix_x, pix_y, 30.)
+    geom = CameraGeometry(cam_id=0, pix_id=pix_id, pix_x=pix_x * u.mm, pix_y=pix_y * u.mm,
+                          pix_area=np.ones(1296) * 482.41, neighbors=neighbors_pix, pix_type='hexagonal')
 
     return geom, pix_id
 
