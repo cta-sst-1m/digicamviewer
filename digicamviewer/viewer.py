@@ -8,15 +8,12 @@ from matplotlib.widgets import Button, RadioButtons, CheckButtons
 from itertools import cycle
 from matplotlib.colors import LogNorm
 import matplotlib as mpl
-import scipy.stats
-import matplotlib.animation as animation
 from cts_core import camera
-import astropy.units as u
 
 
 class EventViewer():
 
-    def __init__(self, event_stream, camera_config_file, n_samples, scale='lin', limits_colormap=None, limits_readout=None, time_bin_start=0, pixel_id_start=0, telescope_id_start=1):
+    def __init__(self, event_stream, camera_config_file, n_samples, scale='lin', limits_colormap=None, limits_readout=None, time_bin_start=0, pixel_id_start=0, telescope_id_start=0):
 
         mpl.figure.autolayout = False
         self.first_call = True
@@ -119,15 +116,15 @@ class EventViewer():
 
     def next(self, event=None, step=1):
 
-        for i, event_iterator in zip(range(step), self.event_stream):
+        for i, event in zip(range(step), self.event_stream):
             pass
 
-        self.event_id = event_iterator.r0.event_id
-        self.r0_container = event_iterator.r0.tel[self.telescope_id]
-        self.r1_container = event_iterator.r1.tel[self.telescope_id]
-        self.dl0_container = event_iterator.dl0.tel[self.telescope_id]
-        self.dl1_container = event_iterator.dl1.tel[self.telescope_id]
-        self.dl2_container = event_iterator.dl2
+        self.event_id = event.r0.event_id
+        self.r0_container = event.r0.tel[self.telescope_id]
+        self.r1_container = event.r1.tel[self.telescope_id]
+        self.dl0_container = event.dl0.tel[self.telescope_id]
+        self.dl1_container = event.dl1.tel[self.telescope_id]
+        self.dl2_container = event.dl2
         self.adc_samples = self.r0_container.adc_samples
         self.trigger_output = self.r0_container.trigger_output_patch7
         self.trigger_input = self.r0_container.trigger_input_traces
