@@ -13,7 +13,7 @@ from cts_core import camera
 
 class EventViewer():
 
-    def __init__(self, event_stream, camera_config_file, n_samples, scale='lin', limits_colormap=None, limits_readout=None, time_bin_start=0, pixel_id_start=0, telescope_id_start=0):
+    def __init__(self, event_stream, camera_config_file, n_samples, scale='lin', limits_colormap=None, limits_readout=None, time_bin_start=0, pixel_id_start=0):
 
         mpl.figure.autolayout = False
         self.first_call = True
@@ -23,7 +23,6 @@ class EventViewer():
         self.limits_readout = limits_readout
         self.time_bin = time_bin_start
         self.pixel_id = pixel_id_start
-        self.telescope_id = telescope_id_start
         self.mask_pixels = False
         self.hillas = False
 
@@ -119,11 +118,12 @@ class EventViewer():
         for i, event in zip(range(step), self.event_stream):
             pass
 
+        telescope_id = event.r0.tels_with_data[0]
         self.event_id = event.r0.event_id
-        self.r0_container = event.r0.tel[self.telescope_id]
-        self.r1_container = event.r1.tel[self.telescope_id]
-        self.dl0_container = event.dl0.tel[self.telescope_id]
-        self.dl1_container = event.dl1.tel[self.telescope_id]
+        self.r0_container = event.r0.tel[telescope_id]
+        self.r1_container = event.r1.tel[telescope_id]
+        self.dl0_container = event.dl0.tel[telescope_id]
+        self.dl1_container = event.dl1.tel[telescope_id]
         self.dl2_container = event.dl2
         self.adc_samples = self.r0_container.adc_samples
         self.trigger_output = self.r0_container.trigger_output_patch7
