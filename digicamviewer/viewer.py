@@ -95,9 +95,9 @@ class EventViewer():
         self.camera_visu.add_colorbar(orientation='horizontal', pad=0.03,
                                       fraction=0.05, shrink=.85)
 
-        #if self.scale == 'log':
-        #    self.camera_visu.colorbar.set_norm(LogNorm(vmin=1, vmax=None,
-        #                                       clip=False))
+        # if self.scale == 'log':
+        #     self.camera_visu.colorbar.set_norm(LogNorm(vmin=1, vmax=None,
+        #                                        clip=False))
         self.camera_visu.colorbar.set_label('[LSB]')
         self.camera_visu.axes.get_xaxis().set_visible(False)
         self.camera_visu.axes.get_yaxis().set_visible(False)
