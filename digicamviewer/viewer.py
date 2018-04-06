@@ -83,12 +83,12 @@ class EventViewer():
         )
         self.camera_visu = visualization.CameraDisplay(
             self.geometry, ax=self.axis_camera, title='', norm=self.scale,
-            cmap='viridis',allow_pick=True
+            cmap='viridis', allow_pick=True
         )
 
-        #if limits_colormap is not None:
-        #    self.camera_visu.set_limits_minmax(limits_colormap[0],
-        #                                       limits_colormap[1])
+        # if limits_colormap is not None:
+        #     self.camera_visu.set_limits_minmax(limits_colormap[0],
+        #                                        limits_colormap[1])
 
         self.camera_visu.image = np.zeros(self.n_pixels)
         self.camera_visu.cmap.set_bad(color='k')
@@ -236,16 +236,24 @@ class EventViewer():
         legend += ' pixel = {},'.format(self.pixel_id)
         legend += ' bin = {} \n'.format(self.time_bin)
         try:
-            legend += ' B = {:0.2f} [LSB],'.format(self.baseline[self.pixel_id])
+            legend += ' B = {:0.2f} [LSB],'.format(
+                self.baseline[self.pixel_id]
+            )
         except:
             pass
         try:
-            legend += ' $\sigma = $ {:0.2f} [LSB] \n'.format(self.std[self.pixel_id])
+            legend += ' $\sigma = $ {:0.2f} [LSB] \n'.format(
+                self.std[self.pixel_id]
+            )
         except:
             pass
         try:
-            legend += ' $G_{{drop}} = $ {:0.2f},'.format(self.gain_drop[self.pixel_id])
-            legend += ' $f_{{nsb}} = $ {:0.2f} [GHz]'.format(self.nsb[self.pixel_id])
+            legend += ' $G_{{drop}} = $ {:0.2f},'.format(
+                self.gain_drop[self.pixel_id]
+            )
+            legend += ' $f_{{nsb}} = $ {:0.2f} [GHz]'.format(
+                self.nsb[self.pixel_id]
+            )
         except:
             pass
         self.trace_readout.set_label(legend)
@@ -271,7 +279,7 @@ class EventViewer():
             elif self.readout_view_type == 'trigger input' and \
                     self.trigger_input is not None:
                 image = np.array([self.trigger_input[pixel.patch]
-                                  for pixel in self.camera.Pixels]) #np.zeros((self.n_pixels, self.n_samples))
+                                  for pixel in self.camera.Pixels])
             elif self.readout_view_type == 'cluster 7' \
                     and self.trigger_input is not None:
                 trigger_input_patch = np.dot(
@@ -304,7 +312,7 @@ class EventViewer():
 
     def next_camera_view(self, camera_view, event=None):
         self.camera_view_type = camera_view
-        if self.readout_view_type in ['photon','reconstructed charge']:
+        if self.readout_view_type in ['photon', 'reconstructed charge']:
             self.camera_visu.colorbar.set_label('[p.e.]')
         else:
             self.camera_visu.colorbar.set_label('[LSB]')
@@ -362,13 +370,16 @@ class EventViewer():
         if self.limits_colormap is not None:
             mask = (self.image >= self.limits_colormap[0])
             if not self.limits_colormap[1] == np.inf:
-                image[(self.image > self.limits_colormap[1])] = self.limits_colormap[1]
+                image[(self.image > self.limits_colormap[1])] = \
+                    self.limits_colormap[1]
         if self.mask_pixels:
-            #mask = mask * self.dl1_container.cleaning_mask
+            # mask = mask * self.dl1_container.cleaning_mask
             mask = mask * self.dl1_container.cleaning_mask
-            #image[~self.dl1_container.cleaning_mask] = 0
+            # image[~self.dl1_container.cleaning_mask] = 0
         if self.hillas:
-            self.camera_visu.overlay_moments(self.dl2_container.shower, color='r', linewidth=4)
+            self.camera_visu.overlay_moments(
+                self.dl2_container.shower, color='r', linewidth=4
+            )
         else:
             self.camera_visu.clear_overlays()
         return np.ma.masked_where(~mask, self.image)
